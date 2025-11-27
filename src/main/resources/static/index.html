@@ -20,25 +20,25 @@
         }
 
         .window {
-          margin-top: 40px;
-          width: 380px;
-          background: #c0c0c0;
-          border: 2px solid #000;
-          box-shadow: 4px 4px 0 #000;
-          position: relative;
-          z-index: 10;
+  /* your existing styles */
+  margin-top: 40px;
+  width: 380px;
+  background: #c0c0c0;
+  border: 2px solid #000;
+  box-shadow: 4px 4px 0 #000;
+  position: relative;
+  z-index: 10;
 
-          /* Animations / transitions */
-          transition:
-            transform 0.3s ease-out,
-            opacity 0.3s ease-out,
-            top 0.25s ease-out,
-            left 0.25s ease-out,
-            right 0.25s ease-out,
-            bottom 0.25s ease-out,
-            width 0.25s ease-out,
-            height 0.25s ease-out;
-        }
+  transition:
+    transform 0.3s ease-out,
+    opacity 0.3s ease-out,
+    top 0.25s ease-out,
+    left 0.25s ease-out,
+    right 0.25s ease-out,
+    bottom 0.25s ease-out,
+    width 0.25s ease-out,
+    height 0.25s ease-out;
+}
 
         .window-maximized {
           position: fixed;
@@ -321,11 +321,12 @@
     const statusEl = document.getElementById('status');
 
     const win = document.getElementById('mainWindow');
-    const titleBar = document.getElementById('titleBar');
+const titleBar = document.getElementById('titleBar');
     const btnMinimize = document.getElementById('btnMinimize');
     const btnMaximize = document.getElementById('btnMaximize');
     const btnClose = document.getElementById('btnClose');
     const mailIcon = document.getElementById('mailIcon');
+    const WINDOW_TRANSITION = getComputedStyle(win).transition || '';
 
     let isMaximized = false;
     let isDragging = false;
@@ -333,6 +334,8 @@
     let startY = 0;
     let currentX = 0;
     let currentY = 0;
+
+    let isClosed = false;
 
     function createParticipantRow(name = '', email = '') {
       const row = document.createElement('div');
@@ -426,36 +429,41 @@
 
     // ---- DRAGGING ----
     function onMouseDown(e) {
-      if (isMaximized) return; // no dragging when maximized
-      isDragging = true;
-      startX = e.clientX;
-      startY = e.clientY;
-      e.preventDefault();
-    }
+  if (isMaximized) return; // no dragging when maximized
+  isDragging = true;
+  startX = e.clientX;
+  startY = e.clientY;
+  // turn off transitions while dragging for snappy movement
+  win.style.transition = 'none';
+  e.preventDefault();
+}
 
-    function onMouseMove(e) {
-      if (!isDragging || isMaximized) return;
+function onMouseMove(e) {
+  if (!isDragging || isMaximized) return;
 
-      const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
+  const dx = e.clientX - startX;
+  const dy = e.clientY - startY;
 
-      const newX = currentX + dx;
-      const newY = currentY + dy;
+  const newX = currentX + dx;
+  const newY = currentY + dy;
 
-      win.style.transform = `translate(${newX}px, ${newY}px)`;
-    }
+  win.style.transform = `translate(${newX}px, ${newY}px)`;
+}
 
-    function onMouseUp() {
-      if (!isDragging) return;
-      isDragging = false;
+function onMouseUp() {
+  if (!isDragging) return;
+  isDragging = false;
 
-      const transform = win.style.transform || 'translate(0px, 0px)';
-      const match = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(transform);
-      if (match) {
-        currentX = parseFloat(match[1]);
-        currentY = parseFloat(match[2]);
-      }
-    }
+  const transform = win.style.transform || 'translate(0px, 0px)';
+  const match = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(transform);
+  if (match) {
+    currentX = parseFloat(match[1]);
+    currentY = parseFloat(match[2]);
+  }
+
+  // restore transitions so minimize/maximize/close stay animated
+  win.style.transition = WINDOW_TRANSITION;
+}
 
     titleBar.addEventListener('mousedown', onMouseDown);
     window.addEventListener('mousemove', onMouseMove);
@@ -497,14 +505,17 @@
 
     // Close: animate shrink & fade, hide everything
     btnClose.addEventListener('click', () => {
-      win.classList.add('anim-close');
-      mailIcon.classList.remove('visible');
-      setTimeout(() => {
-        win.style.display = 'none';
-        win.classList.remove('anim-close');
-        mailIcon.classList.add('hidden');
-      }, 300);
-    });
+    isClosed = true; // mark the window as closed
+
+    win.classList.add('anim-close');
+    mailIcon.classList.remove('visible');
+
+    setTimeout(() => {
+      win.style.display = 'none';
+      win.classList.remove('anim-close');
+      mailIcon.classList.add('hidden');
+    }, 300);
+});
 
     // Clicking the mail icon restores the window with a pop-in
     mailIcon.addEventListener('click', () => {
