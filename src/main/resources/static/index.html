@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Secret Santa Generator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style>
+        body {
+          margin: 0;
+          padding: 0;
+          font-family: "MS Sans Serif", Arial, sans-serif;
+          background: linear-gradient(135deg, #2b133a, #4b006e, #ff77c0);
+          color: #000;
+          display: flex;
+          justify-content: center;
+          align-items: flex-start;
+          min-height: 100vh;
+          overflow: hidden;
+        }
+
+        .window {
+          margin-top: 40px;
+          width: 380px;
+          background: #c0c0c0;
+          border: 2px solid #000;
+          box-shadow: 4px 4px 0 #000;
+          position: relative;
+          z-index: 10;
+
+          /* Animations / transitions */
+          transition:
+            transform 0.3s ease-out,
+            opacity 0.3s ease-out,
+            top 0.25s ease-out,
+            left 0.25s ease-out,
+            right 0.25s ease-out,
+            bottom 0.25s ease-out,
+            width 0.25s ease-out,
+            height 0.25s ease-out;
+        }
+
+        .window-maximized {
+          position: fixed;
+          top: 10px;
+          left: 10px;
+          right: 10px;
+          bottom: 10px;
+          width: auto;
+          height: auto;
+          margin: 0;
+          transform: none !important;
+        }
+
+        /* Animation states */
+        .window.anim-minimize {
+          transform: translate(-40vw, 40vh) scale(0.2);
+          opacity: 0;
+        }
+
+        .window.anim-close {
+          transform: scale(0.8);
+          opacity: 0;
+        }
+
+        .window.anim-pop-in {
+          transform: scale(1);
+          opacity: 1;
+        }
+
+        .title-bar {
+          background: linear-gradient(90deg, #000080, #1084d0);
+          color: #fff;
+          padding: 4px 8px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-size: 12px;
+          font-weight: bold;
+          cursor: move;
+          user-select: none;
+        }
+
+        .title-bar-buttons {
+          display: flex;
+          gap: 2px;
+        }
+
+        .title-bar-button {
+          width: 14px;
+          height: 14px;
+          border: 1px solid #000;
+          background: #c0c0c0;
+          display: inline-block;
+          text-align: center;
+          font-size: 10px;
+          line-height: 12px;
+          box-shadow: 1px 1px 0 #fff;
+          cursor: default;
+        }
+
+        .window-body {
+          padding: 10px;
+          border-top: 2px solid #fff;
+          border-left: 2px solid #fff;
+          border-right: 2px solid #808080;
+          border-bottom: 2px solid #808080;
+          background: #e0e0e0;
+          font-size: 12px;
+        }
+
+        h1 {
+          font-size: 14px;
+          margin: 0 0 8px;
+        }
+
+        .description {
+          font-size: 11px;
+          margin-bottom: 10px;
+        }
+
+        .participants {
+          max-height: 200px;
+          overflow-y: auto;
+          margin-bottom: 8px;
+          border: 2px inset #808080;
+          padding: 6px;
+          background: #fff;
+        }
+
+        .participant-row {
+          display: flex;
+          gap: 4px;
+          margin-bottom: 4px;
+        }
+
+        .participant-row input {
+          flex: 1;
+          padding: 2px 4px;
+          border: 2px inset #808080;
+          font-size: 11px;
+          font-family: inherit;
+        }
+
+        .participant-row button {
+          padding: 0 6px;
+          border: 2px outset #fff;
+          background: #c0c0c0;
+          font-size: 11px;
+          cursor: pointer;
+        }
+
+        .actions {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: 8px;
+        }
+
+        .btn {
+          padding: 3px 12px;
+          border: 2px outset #fff;
+          background: #c0c0c0;
+          cursor: pointer;
+          font-size: 12px;
+        }
+
+        .btn:active {
+          border-style: inset;
+        }
+
+        .status {
+          margin-top: 8px;
+          font-size: 11px;
+          min-height: 16px;
+        }
+
+        .status.error { color: #b00000; }
+        .status.success { color: #006400; }
+
+        .footer-note {
+          margin-top: 6px;
+          font-size: 10px;
+          text-align: right;
+          opacity: 0.8;
+        }
+
+        .message-window {
+          margin-top: 20px;
+          padding: 20px;
+          border: 2px inset #808080;
+          background: #ffffff;
+          text-align: center;
+        }
+
+        .message-text {
+          font-size: 14px;
+          font-weight: bold;
+          margin: 0;
+        }
+
+        .hidden {
+          display: none;
+        }
+
+        /* Mail “icon” when minimized */
+        .mail-icon {
+  position: fixed;
+  bottom: 10px;
+  left: 10px;
+  width: 80px;   /* previously 100px */
+  height: 80px;
+  background: transparent; /* no background frame */
+  border: none;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  cursor: pointer;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+}
+
+        .mail-icon.visible {
+          opacity: 1;
+          transform: scale(1);
+        }
+
+        .mail-icon-inner {
+  position: relative;
+  width: 70px;
+  height: 50px;
+  border: 2px solid #000;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.mail-icon-inner::before,
+.mail-icon-inner::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: #000;
+}
+
+.mail-icon-inner::before {
+  top: 0;
+  transform: skewY(-25deg);
+  transform-origin: left top;
+}
+
+.mail-icon-inner::after {
+  bottom: 0;
+  transform: skewY(25deg);
+  transform-origin: left bottom;
+}
+
+.mail-icon-label {
+  position: absolute;
+  bottom: 4px;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 10px;
+}
+
+        @media (max-width: 480px) {
+          .window {
+            width: 95%;
+          }
+        }
+    </style>
+</head>
+<body>
+
+<div class="window" id="mainWindow">
+    <div class="title-bar" id="titleBar">
+        <span>SECRET_SANTA.EXE</span>
+        <div class="title-bar-buttons">
+            <span class="title-bar-button" id="btnMinimize">−</span>
+            <span class="title-bar-button" id="btnMaximize">□</span>
+            <span class="title-bar-button" id="btnClose">×</span>
+        </div>
+    </div>
+    <div class="window-body">
+        <h1>Secret Santa Generator</h1>
+        <p class="description">
+            Add everyone’s <b>name</b> and <b>email</b>.<br>
+            We’ll shuffle them and send each person their Secret Santa.
+        </p>
+
+        <div id="participants" class="participants"></div>
+
+        <div class="actions">
+            <button class="btn" id="addParticipantBtn">Add person</button>
+            <button class="btn" id="generateBtn">Generate &amp; send</button>
+        </div>
+
+        <div id="status" class="status"></div>
+        <div class="footer-note">Powered by vibes &amp; Java.</div>
+    </div>
+</div>
+
+<!-- Minimized mail app icon -->
+<div id="mailIcon" class="mail-icon hidden">
+    <img
+            src="/img/mail-icon.webp"
+            alt="Mail Icon"
+            style="width: 100%; height: 100%; image-rendering: pixelated;"
+    />
+</div>
+
+<script>
+    const participantsContainer = document.getElementById('participants');
+    const addParticipantBtn = document.getElementById('addParticipantBtn');
+    const generateBtn = document.getElementById('generateBtn');
+    const statusEl = document.getElementById('status');
+
+    const win = document.getElementById('mainWindow');
+    const titleBar = document.getElementById('titleBar');
+    const btnMinimize = document.getElementById('btnMinimize');
+    const btnMaximize = document.getElementById('btnMaximize');
+    const btnClose = document.getElementById('btnClose');
+    const mailIcon = document.getElementById('mailIcon');
+
+    let isMaximized = false;
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let currentX = 0;
+    let currentY = 0;
+
+    function createParticipantRow(name = '', email = '') {
+      const row = document.createElement('div');
+      row.className = 'participant-row';
+
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.placeholder = 'Name';
+      nameInput.value = name;
+
+      const emailInput = document.createElement('input');
+      emailInput.type = 'email';
+      emailInput.placeholder = 'Email';
+      emailInput.value = email;
+
+      const removeBtn = document.createElement('button');
+      removeBtn.textContent = 'X';
+      removeBtn.title = 'Remove';
+      removeBtn.onclick = () => row.remove();
+
+      row.appendChild(nameInput);
+      row.appendChild(emailInput);
+      row.appendChild(removeBtn);
+
+      return row;
+    }
+
+    function addParticipantRow() {
+      participantsContainer.appendChild(createParticipantRow());
+    }
+
+    addParticipantBtn.addEventListener('click', addParticipantRow);
+
+    // Start with 3 rows by default
+    for (let i = 0; i < 3; i++) addParticipantRow();
+
+    generateBtn.addEventListener('click', async () => {
+      statusEl.textContent = '';
+      statusEl.className = 'status';
+
+      const rows = document.querySelectorAll('.participant-row');
+      const participants = [];
+
+      rows.forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        const name = inputs[0].value.trim();
+        const email = inputs[1].value.trim();
+        if (name && email) {
+          participants.push({ name, email });
+        }
+      });
+
+      if (participants.length < 2) {
+        statusEl.textContent = 'Need at least 2 participants.';
+        statusEl.classList.add('error');
+        return;
+      }
+
+      try {
+        generateBtn.disabled = true;
+        generateBtn.textContent = 'Sending...';
+
+        const response = await fetch('/api/secret-santa', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ participants })
+        });
+
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text || 'Server error');
+        }
+
+        // On success: replace the whole window body with a Win95-style message
+        const windowBody = document.querySelector('.window-body');
+        windowBody.innerHTML = `
+          <h1>Secret Santa Generator</h1>
+          <div class="message-window">
+            <p class="message-text">Check your inbox!</p>
+          </div>
+          <div class="footer-note">Powered by vibes &amp; Java.</div>
+        `;
+      } catch (err) {
+        statusEl.textContent = 'Error: ' + err.message;
+        statusEl.classList.add('error');
+      } finally {
+        generateBtn.disabled = false;
+        generateBtn.textContent = 'Generate & send';
+      }
+    });
+
+    // ---- DRAGGING ----
+    function onMouseDown(e) {
+      if (isMaximized) return; // no dragging when maximized
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      e.preventDefault();
+    }
+
+    function onMouseMove(e) {
+      if (!isDragging || isMaximized) return;
+
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+
+      const newX = currentX + dx;
+      const newY = currentY + dy;
+
+      win.style.transform = `translate(${newX}px, ${newY}px)`;
+    }
+
+    function onMouseUp() {
+      if (!isDragging) return;
+      isDragging = false;
+
+      const transform = win.style.transform || 'translate(0px, 0px)';
+      const match = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(transform);
+      if (match) {
+        currentX = parseFloat(match[1]);
+        currentY = parseFloat(match[2]);
+      }
+    }
+
+    titleBar.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    window.addEventListener('mouseleave', onMouseUp);
+
+    // ---- WINDOW CONTROLS ----
+
+    // Minimize: animate to bottom-left, then show mail icon
+    btnMinimize.addEventListener('click', () => {
+      win.classList.add('anim-minimize');
+      setTimeout(() => {
+        win.style.display = 'none';
+        win.classList.remove('anim-minimize');
+        win.style.transform = 'none';
+        currentX = 0;
+        currentY = 0;
+
+        mailIcon.classList.remove('hidden');
+        // small delay to allow display:block to apply before transition
+        requestAnimationFrame(() => {
+          mailIcon.classList.add('visible');
+        });
+      }, 300); // matches CSS transition duration
+    });
+
+    // Maximize / restore toggle with smooth animation handled by CSS transitions
+    btnMaximize.addEventListener('click', () => {
+      if (!isMaximized) {
+        isMaximized = true;
+        win.classList.add('window-maximized');
+        win.style.transform = 'none';
+      } else {
+        isMaximized = false;
+        win.classList.remove('window-maximized');
+        win.style.transform = `translate(${currentX}px, ${currentY}px)`;
+      }
+    });
+
+    // Close: animate shrink & fade, hide everything
+    btnClose.addEventListener('click', () => {
+      win.classList.add('anim-close');
+      mailIcon.classList.remove('visible');
+      setTimeout(() => {
+        win.style.display = 'none';
+        win.classList.remove('anim-close');
+        mailIcon.classList.add('hidden');
+      }, 300);
+    });
+
+    // Clicking the mail icon restores the window with a pop-in
+    mailIcon.addEventListener('click', () => {
+      mailIcon.classList.remove('visible');
+      setTimeout(() => {
+        mailIcon.classList.add('hidden');
+      }, 200);
+
+      win.style.display = 'block';
+      win.style.opacity = '0';
+      win.style.transform = 'scale(0.8)';
+      isMaximized = false;
+      currentX = 0;
+      currentY = 0;
+
+      requestAnimationFrame(() => {
+        win.classList.add('anim-pop-in');
+        win.style.transform = 'scale(1)';
+        win.style.opacity = '1';
+
+        setTimeout(() => {
+          win.classList.remove('anim-pop-in');
+          win.style.transform = 'none';
+        }, 300);
+      });
+    });
+</script>
+
+</body>
+</html>
