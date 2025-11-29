@@ -60,6 +60,10 @@ Use to enter website:
 http://localhost:8080
 
 This project is pre-configured for local email testing using MailHog.
+
+In terminal run:
+mailhog
+
 MailHog Ports
 •	SMTP server: localhost:1025
 •	Web UI: http://localhost:8025
