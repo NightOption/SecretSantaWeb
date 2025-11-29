@@ -15,16 +15,16 @@ Perfect for small groups, friends, family, or office events.
 
 ---
 
-## 🖼️ Features
+## Features
 
-### ✨ Core Functionality
+### Core Functionality
 - Add any number of participants
 - Robust Secret Santa pairing algorithm
 - Ensures no one draws themselves
 - One-click *Generate & Send*
 - Emails delivered via SMTP
 
-### 🪟 Win95 UI
+### Win95 UI
 - Movable draggable application window
 - Animations for minimize, maximize, close
 - Minimize → shrinks to bottom-left mail icon
@@ -32,14 +32,14 @@ Perfect for small groups, friends, family, or office events.
 - Success screen styled like a classic message box
 - Vaporwave-inspired background
 
-### 📧 Email Delivery
+### Email Delivery
 - Fully integrated email sending via Spring Boot Mail
 - Includes plug-and-play **MailHog** setup for safe local testing
 - Optional real SMTP provider configuration
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 1. Requirements
 - **Java 17+**
@@ -49,7 +49,7 @@ Perfect for small groups, friends, family, or office events.
 
 ---
 
-## ▶️ Running the Application
+## Running the Application
 
 Start the Spring Boot application:
 
