@@ -5,6 +5,17 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 
+/**
+ * Request payload for the Secret Santa API.
+ *
+ * This DTO contains the list of participants submitted by the frontend.
+ * Each participant consists of:
+ *  - name  (required, non-empty)
+ *  - email (required, must be a valid email address)
+ *
+ * Validation annotations ensure the backend receives well-formed data
+ * before the service layer attempts to generate pairings or send emails.
+ */
 public class SecretSantaRequest {
 
     @Size(min = 2, message = "Need at least 2 participants")
@@ -18,6 +29,12 @@ public class SecretSantaRequest {
         this.participants = participants;
     }
 
+    /**
+     * Represents one participant in the Secret Santa draw.
+     *
+     * This inner class exists only to structure the JSON request body.
+     * It is not used for persistence or business logic beyond transporting data.
+     */
     public static class Participant {
 
         @NotBlank
